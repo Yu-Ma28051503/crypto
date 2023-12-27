@@ -5,3 +5,6 @@
 *
 !*/
 !*.*
+
+# Makefileは無視しない
+!Makefile
