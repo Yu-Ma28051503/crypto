@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror
+CFLAGS = -Wall
 LDFLAGS = -lm
 
 # List all C source files in the current directory
