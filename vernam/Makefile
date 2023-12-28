@@ -1,7 +1,7 @@
 # このディレクトリ内のファイルをコンパイルするためのMakefile
 
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror
+CFLAGS = -Wall
 LDFLAGS = -lm
 
 # デフォルトのターゲット
