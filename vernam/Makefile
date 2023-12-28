@@ -1,20 +1,20 @@
-# このディレクトリ内のファイルをコンパイルするためのMakefile
-
 CC = gcc
 CFLAGS = -Wall -Wextra -Werror
 LDFLAGS = -lm
 
-# デフォルトのターゲット
-all: vernam
+# List all C source files in the current directory
+SRCS = $(wildcard *.c)
 
-# ターゲットの依存関係
-vernam: vernam.o
+# Name of the executable
+TARGET = vernam
 
-# ファイルのコンパイル
-.c:
-	$(CC) $(CFLAGS) -c $<
+# Default target
+all: $(TARGET)
 
+# Rule to build the executable
+$(TARGET): $(SRCS)
+	$(CC) $(CFLAGS) -o $@ $^
 
-# ターゲットのクリーンアップ
+# Clean rule to remove generated files
 clean:
-	rm -f vernam vernam.o
+	rm -f $(TARGET)
