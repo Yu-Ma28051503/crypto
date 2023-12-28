@@ -11,13 +11,13 @@
 #define MAX 1000
 
 /* vernam暗号で暗号化する関数 */
-void vernam(char *plain, char key, char *cipher)
+void vernam(char *plain, char *key, char *cipher)
 {
     int i, len;
 
     len = strlen(plain);
     for (i = 0; i < len; i++) {
-        cipher[i] = (plain[i] - 'a' + key - 'a') % 26 + 'a';
+        cipher[i] = (plain[i] - 'a' + key[i] - 'a') % 26 + 'a';
     }
     cipher[len] = '\0';
 
@@ -26,13 +26,13 @@ void vernam(char *plain, char key, char *cipher)
 }
 
 /* vernam暗号で復号する関数 */
-void de_vernam(char *cipher, char key, char *plain)
+void de_vernam(char *cipher, char *key, char *plain)
 {
     int i, len;
 
     len = strlen(cipher);
     for (i = 0; i < len; i++) {
-        plain[i] = (cipher[i] - key + 26) % 26 + 'a';
+        plain[i] = (cipher[i] - key[i] + 26) % 26 + 'a';
     }
     plain[len] = '\0';
 
@@ -42,7 +42,7 @@ void de_vernam(char *cipher, char key, char *plain)
 
 int main(void)
 {
-    char plain[MAX], key, cipher[MAX];
+    char plain[MAX], key[MAX], cipher[MAX];
     int len;
 
     // 暗号化する平文を入力
@@ -54,11 +54,14 @@ int main(void)
 
     // 時間をシード値として鍵を生成
     srand((unsigned)time(NULL));
-    key = rand() % 26 + 'a';
+    for(int i = 0; i < len; i++) {
+        key[i] = rand() % 26 + 'a';
+    }
+    key[len] = '\0';
 
     // 平文と鍵を表示
     printf("平文：%s\n", plain);
-    printf("鍵：%c\n", key);
+    printf("鍵：%s\n", key);
 
     // 暗号化
     vernam(plain, key, cipher);
