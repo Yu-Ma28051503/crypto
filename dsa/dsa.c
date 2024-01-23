@@ -23,14 +23,9 @@ typedef struct {
     int s;
 } DSA_SIGN;
 
-/* 乱数を生成する関数 */
 int gen_rand(int min, int max)
 {
-    int rnd;
-
-    rnd = rand() % (max - min + 1) + min;
-
-    return rnd;
+    return rand() % (max - min + 1) + min;
 }
 
 /* 素数かどうかを判定する関数 */
@@ -61,7 +56,7 @@ int gen_prime_rand(int min, int max)
     int rnd;
 
     while (1) {
-        rnd = gen_rand(min, max);
+        rnd = rand() % (max - min + 1) + min;
         if (is_prime(rnd) == 1) {
             break;
         }
@@ -70,24 +65,35 @@ int gen_prime_rand(int min, int max)
     return rnd;
 }
 
+int pow_mod_int(int a, int b, int n)
+{
+    int res = 1;
+
+    for(int i = 0; i < b; i++) {
+        res = res * a % n;
+    }
+
+    return res;
+}
+
 /* 署名鍵を生成する */
 /* y := g^x mod p */
 int gen_sign_key(DSA *dsa)
 {
     /* pを生成 */
-    dsa->p = gen_prime_rand(100, 1000);
+    dsa->p = gen_prime_rand(1000, 10000);
 
     /* qを生成 */
-    dsa->q = gen_prime_rand(100, 1000);
+    dsa->q = gen_prime_rand(1000, 10000);
 
     /* gを生成 */
-    dsa->g = gen_prime_rand(100, 1000);
+    dsa->g = gen_prime_rand(1000, 10000);
 
     /* xを生成 */
-    dsa->x = gen_rand(100, 1000);
+    dsa->x = gen_rand(1000, 10000);
 
     /* yを生成 */
-    dsa->y = (int)pow(dsa->g, dsa->x) % dsa->p;
+    dsa->y = pow_mod_int(dsa->g, dsa->x, dsa->p);
 
     return 0;
 }
@@ -97,11 +103,14 @@ int gen_sign_key(DSA *dsa)
 /* r = (g^k mod p) mod q */
 int gen_dsa_sign(DSA *dsa, DSA_SIGN *dsa_sign, int *m, int *k)
 {
+    printf("sign\n");
+    printf("m = %d\n", *m);
+
     /* kを生成 */
     *k = gen_rand(2, dsa->p-1);
 
     /* rを生成 */
-    dsa_sign->r = (int)pow(dsa->g, *k) % dsa->p % dsa->q;
+    dsa_sign->r = pow_mod_int(dsa->g, *k, dsa->p) % dsa->q;
 
     /* sを生成 */
     dsa_sign->s = ((*m) + (dsa->x * dsa_sign->r)) / (*k) % dsa->q;
@@ -117,25 +126,28 @@ int gen_dsa_sign(DSA *dsa, DSA_SIGN *dsa_sign, int *m, int *k)
 /* v = r ならば、署名は正しい */
 int verify_dsa_sign(DSA *dsa, DSA_SIGN *dsa_sign, int *m)
 {
-    int w, u1, u2, v;
+    int u1, u2, v;
 
-    /* wの生成 */
-    w = (int)pow(dsa_sign->s, -1) % dsa->q;
+    printf("verify\n");
+    printf("m = %d\n", *m);
 
-    /* u1の生成 */
+    /* wを生成 */
+    int w = pow_mod_int(dsa_sign->s, -1, dsa->q);
+
+    /* u1を生成 */
     u1 = (*m) * w % dsa->q;
 
-    /* u2の生成 */
-    u2 = (dsa_sign->r) * w % dsa->q;
+    /* u2を生成 */
+    u2 = dsa_sign->r * w % dsa->q;
 
-    /* vの生成 */
-    v = ((int)pow(dsa->g, u1) * (int)pow(dsa->y, u2)) % dsa->p % dsa->q;
+    /* vを生成 */
+    v = (pow_mod_int(dsa->g, u1, dsa->p) * pow_mod_int(dsa->y, u2, dsa->p)) % dsa->q;
+    printf("v = %d\n", v);
 
     if(v == dsa_sign->r) return 1;
 
     return 0;
 }
-
 
 int main(void)
 {
@@ -155,7 +167,7 @@ int main(void)
     // printf("署名する文字列を入力してください\n");
     // scanf("%s", str);
 
-    m = 1234;
+    m = 123456;
 
     /* 文字列を数値に変換 */
     // m = 0;
@@ -169,6 +181,15 @@ int main(void)
 
     /* 署名を生成 */
     gen_dsa_sign(&dsa, &dsa_sign, &M, &k);
+
+    /* 値を表示 */
+    printf("p = %d\n", dsa.p);
+    printf("q = %d\n", dsa.q);
+    printf("g = %d\n", dsa.g);
+    printf("x = %d\n", dsa.x);
+    printf("y = %d\n", dsa.y);
+    printf("r = %d\n", dsa_sign.r);
+    printf("s = %d\n", dsa_sign.s);
 
     /* 署名を検証 */
     if(verify_dsa_sign(&dsa, &dsa_sign ,&M) == 1) printf("署名は正しいです\n");
