@@ -65,15 +65,10 @@ int gen_prime_rand(int min, int max)
     return rnd;
 }
 
+/* a^b mod n */
 int pow_mod_int(int a, int b, int n)
 {
-    int res = 1;
-
-    for(int i = 0; i < b; i++) {
-        res = res * a % n;
-    }
-
-    return res;
+    return b*(a % n) % n;
 }
 
 /* 署名鍵を生成する */
