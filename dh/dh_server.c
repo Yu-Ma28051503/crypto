@@ -15,26 +15,12 @@
 #define DEFAULT_PORT 50000
 
 // 整数の累乗を計算する
-int pow_int(int a, int b)
+int pow_mod_int(int a, int b, int n)
 {
-    int i = 0;
     int ret = 1;
 
-    for(i = 0; i < b; i++) {
-        ret = ret * a;
-    }
-
-    return ret;
-}
-
-// DH鍵共有から得た値で共通鍵を生成する
-int gen_secret_key(int a, int b, int p)
-{
-    int i = 0;
-    int ret = 1;
-
-    for(i = 0; i < b; i++) {
-        ret = (ret * a) % p;
+    for(int i = 0; i < b; i++) {
+        ret = ret * a % n;
     }
 
     return ret;
@@ -63,55 +49,62 @@ int main(void)
         return -1;
     }
 
-    memset(&addr, 0, sizeof(struct sockaddr_in));
-
     // ソケットアドレスの設定
+    memset(&addr, 0, sizeof(struct sockaddr_in));
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
     // ソケットにソケットアドレスを割り当てる
     if(bind(sockfd, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) == -1) {
-        fprintf(stderr, "bind");
+        fprintf(stderr, "bind\n");
         return -1;
     }
 
     // 接続の受付け
     if(listen(sockfd, SOMAXCONN) == -1) {
-        fprintf(stderr, "listen");
+        fprintf(stderr, "listen\n");
+        close(sockfd);
         return -1;
     }
 
-    // クライアントからの接続を受け付ける
-    printf("waiting connection...");
-    if((ret = accept(sockfd, (struct sockaddr *)&client_addr, &len)) == -1) {
-        fprintf(stderr, "accept");
-        return -1;
-    }
-    printf("accepted");
-
-    // ここからDH鍵交換の処理を記述する
     // 乱数の初期化
     srand((unsigned int)time(NULL));
     b = rand() % ((p-1) - 1 + 1) + 1;
+
+    printf("waiting connection...\n");
+
+    // クライアントからの接続を受け付ける
+    if((ret = accept(sockfd, (struct sockaddr *)&client_addr, &len)) == -1) {
+        fprintf(stderr, "accept");
+        close(sockfd);
+        return -1;
+    }
+    printf("accepted\n");
+
+    // ここからDH鍵交換の処理を記述する
     printf("b = %d\n", b);
-    B = pow_int(g, b) % p;
+    B = pow_mod_int(g, b, p);
     printf("B = %d\n", B);
 
     // クライアントから公開鍵を受信する
-    if(recv(ret, &A, sizeof(A), 0) == -1) {
+    if(recv(ret, &A, sizeof(A), 0) <= 0) {
         fprintf(stderr, "recv");
+        close(ret);
+        close(sockfd);
         return -1;
     }
 
     // クライアントに公開鍵を送信する
-    if(send(ret, &B, sizeof(B), 0) == -1) {
+    if(send(ret, &B, sizeof(B), 0) <= 0) {
         fprintf(stderr, "send");
+        close(ret);
+        close(sockfd);
         return -1;
     }
 
     // 共通鍵を生成する
-    s = gen_secret_key(A, b, p);
+    s = pow_mod_int(A, b, p);
     printf("s = %d\n", s);
 
     // ソケットのクローズ

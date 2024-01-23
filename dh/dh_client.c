@@ -13,25 +13,12 @@
 #include <arpa/inet.h>
 
 // 整数の累乗を計算する
-int pow_int(int a, int b)
+int pow_mod_int(int a, int b, int n)
 {
     int ret = 1;
 
     for(int i = 0; i < b; i++) {
-        ret = ret * a;
-    }
-
-    return ret;
-}
-
-// DH鍵共有から得た値で共通鍵を生成する
-int gen_secret_key(int a, int b, int p)
-{
-    int i = 0;
-    int ret = 1;
-
-    for(i = 0; i < b; i++) {
-        ret = (ret * a) % p;
+        ret = ret * a % n;
     }
 
     return ret;
@@ -39,7 +26,6 @@ int gen_secret_key(int a, int b, int p)
 
 int main(void)
 {
-    int ret = 0;
     int sockfd = 0;
     struct sockaddr_in addr;  // ソケットアドレス
 
@@ -53,7 +39,7 @@ int main(void)
 
     // ソケットの作成
     if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-        fprintf(stderr, "socket");
+        fprintf(stderr, "socket\n");
         return -1;
     }
 
@@ -61,37 +47,41 @@ int main(void)
     memset(&addr, 0, sizeof(struct sockaddr_in));
     addr.sin_family = AF_INET;
     addr.sin_port = htons(50000);
-    addr.sin_addr.s_addr = inet_addr("1270.0.0.1");
+    addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
     // TCPコネクションの確立
+    printf("connecting...\n");
     if(connect(sockfd, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) == -1) {
-        fprintf(stderr, "connect");
+        fprintf(stderr, "connect\n");
+        close(sockfd);
         return -1;
     }
-    printf("connected");
+    printf("connected\n");
 
     // ここからDH鍵交換の処理を記述する
     // 乱数の初期化
     srand((unsigned int)time(NULL));
     a = rand() % ((p-1) - 1 + 1) + 1;
     printf("a = %d\n", a);
-    A = pow_int(g, a) % p;
+    A = pow_mod_int(g, a, p);
     printf("A = %d\n", A);
 
     // サーバに公開鍵を送信する
-    if(send(sockfd, &A, sizeof(A), 0) == -1) {
+    if(send(sockfd, &A, sizeof(A), 0) <= 0) {
         fprintf(stderr, "send");
+        close(sockfd);
         return -1;
     }
 
     // サーバから公開鍵を受信する
-    if(recv(sockfd, &B, sizeof(B), 0) == -1) {
+    if(recv(sockfd, &B, sizeof(B), 0) <= 0) {
         fprintf(stderr, "recv");
+        close(sockfd);
         return -1;
     }
 
     // 共通鍵を生成する
-    s = gen_secret_key(B, a, p);
+    s = pow_mod_int(B, a, p);
     printf("s = %d\n", s);
 
     // ソケットのクローズ
