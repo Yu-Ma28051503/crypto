@@ -21,7 +21,7 @@ void Swap(byte *x, byte *y)
     *y = tmp;
 }
 
-void Prinf_Hex(byte *data, int len)
+void Printf_Hex(byte *data, int len)
 {
     for (int i = 0; i < len; i++) {
         if ((i % 16) == 0) {
@@ -48,11 +48,11 @@ void Init_Sbox(byte *s, byte *key, int key_len)
 
     // debug
     printf("S = [\n");
-    Prinf_Hex(s, S_BOX_LEN);
+    Printf_Hex(s, S_BOX_LEN);
     printf("\n]\n");
 }
 
-/* Pseduo-Random Generation Algorithm */
+/* Pseudo-Random Generation Algorithm */
 byte Prga(byte *s, int *i, int *j)
 {
     *i = (*i + 1) & 0xFF;
@@ -71,7 +71,7 @@ int Generate_Rc4_Key(byte *key, int key_len)
                              0xd4, 0x18, 0x53, 0x1c,
                              0x90, 0x11, 0x97, 0xa5};
     
-    memcpy(tmp_key, key, key_len);
+    memcpy(key, tmp_key, key_len);
 
     return ret;
 }
@@ -82,7 +82,7 @@ int main(void)
     int j  = 0;
     byte k = 0;
 
-    char *plain = "Hello, RC4!\0";
+    char *plain = "Hello, RC4!";
     int plain_len = 0;
     byte cipher[100];
     byte dec[100];
@@ -98,7 +98,7 @@ int main(void)
     }
 
     Init_Sbox(S_box, key, KEY_LEN);
-    memcpy(S_box, S_for_dec, S_BOX_LEN);
+    memcpy(S_for_dec, S_box, S_BOX_LEN);
 
     plain_len = strlen(plain);
     if (plain_len > 100) {
@@ -108,7 +108,7 @@ int main(void)
     }
 
     printf("plain text:   %s\n", plain);
-    // Prinf_Hex(plain, plain_len);
+    // Printf_Hex(plain, plain_len);
     printf("ptext (hex): ");
     for (int n = 0; n < plain_len; n++) {
         printf(" %02X", plain[n]);
@@ -133,7 +133,7 @@ int main(void)
     }
     printf("\n");
 
-    if (strncmp(plain, dec, plain_len) == 0) {
+    if (strncmp(plain, (char *)dec, plain_len) == 0) {
         printf("valid!\n");
     }
     else {
